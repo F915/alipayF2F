@@ -4,7 +4,8 @@ import collections
 import copy
 import json
 from datetime import datetime
-from urllib import request, parse
+import urllib
+import parse
 
 import rsa
 
@@ -58,7 +59,7 @@ class alipay:
             buf += '{}={}&'.format(key, params[key])
         params['sign'] = self._make_sign(buf[:-1], **kwargs)
         # 发射http请求取回数据
-        data = request.urlopen(self.requesturl, data=parse.urlencode(params).encode('utf-8')).read().decode()
+        data = urllib.urlopen(self.requesturl, data=parse.urlencode(params).encode('utf-8')).read().decode('gbk')
         return data
 
     def parse_response(self, params, **kwargs):
@@ -73,12 +74,10 @@ class alipay:
                          operator_id=None, store_id=None, terminal_id=None, timeout_express=None, alipay_store_id=None,
                          royalty_info=None, extend_params=None, **kwargs):
         """
-
         :param out_trade_no:    商户订单号,64个字符以内、只能包含字母、数字、下划线；需保证在商户端不重复.
         :param total_amount:    订单总金额，单位为元，精确到小数点后两位.
         :param subject:         订单标题.
         :param seller_id:       卖家支付宝用户ID。 如果该值为空，则默认为商户签约账号对应的支付宝用户ID.
-
         :param discountable_amount:可打折金额. 参与优惠计算的金额，单位为元，精确到小数点后两位，取值范围[0.01,100000000]
         :param undiscountable_amount:不可打折金额. 不参与优惠计算的金额，单位为元，精确到小数点后两位，取值范围[0.01,100000000]
         :param buyer_logon_id:      买家支付宝账号
@@ -96,7 +95,6 @@ class alipay:
         """
         params = copy.deepcopy(self.params)
         params['method'] = 'alipay.trade.precreate'
-        total_amount = round(int(total_amount), 2)
         if discountable_amount:
             discountable_amount = round(int(discountable_amount), 2)
         if undiscountable_amount:
@@ -122,7 +120,6 @@ class alipay:
                      refund_reason=None, out_request_no=None, operator_id=None, store_id=None,
                      terminal_id=None, **kwargs):
         """
-
         :param refund_amount:   需要退款的金额，该金额不能大于订单金额,单位为元，支持两位小数
         :param out_trade_no:    商户订单号，不可与支付宝交易号同时为空
         :param trade_no:        支付宝交易号，和商户订单号不能同时为空
@@ -156,6 +153,4 @@ class alipay:
         resp = self._make_request(params, dict(filter(lambda x: x[1] is not None, biz_content.items())), **kwargs)
         check = eval(resp)
         resp = json.loads(resp)['alipay_trade_query_response']
-        if self._check_sign(check['alipay_trade_query_response'], check['sign']) and resp['code'] == 10000:
-            return resp
-        return False
+        return resp
